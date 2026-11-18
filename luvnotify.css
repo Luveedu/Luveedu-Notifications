@@ -1,0 +1,422 @@
+/* =======================================================================
+   LUVEEDU NOTIFICATIONS - luvnotify.css (v1)
+   Toast notifications for all Luveedu products.
+   Pairs with: js/v1/luvnotify.js
+
+   USAGE
+   -----
+   <link rel="stylesheet" href="https://files.luveedu.com/ui-library/css/v1/luvnotify.css">
+   <script src="https://files.luveedu.com/ui-library/js/v1/luvnotify.js"></script>
+
+   LuvNotify.success('Saved!');
+   LuvNotify.show({ type:'info', title:'Heads up', message:'...', showCopy:true });
+
+   Works standalone. When css/v1/library.css is also loaded it inherits the
+   same fonts, 6px radius and colour language.
+   ======================================================================= */
+
+/* ------------------------------------------------------------------------
+   1. TOKENS
+   ------------------------------------------------------------------------ */
+:root {
+    --luvn-z: 9999;
+    --luvn-radius: 6px;
+    --luvn-font: 'Bricolage Grotesque', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --luvn-shadow: 0 0 24px rgba(15, 23, 42, 0.10), 0 18px 40px -10px rgba(15, 23, 42, 0.28), 0 8px 18px -8px rgba(15, 23, 42, 0.18);
+    --luvn-shadow-hover: 0 0 32px rgba(15, 23, 42, 0.14), 0 24px 52px -12px rgba(15, 23, 42, 0.34), 0 12px 24px -10px rgba(15, 23, 42, 0.22);
+    --luvn-duration: 520ms;
+    --luvn-ease: cubic-bezier(0.2, 0, 0.2, 1);
+    --luvn-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --luvn-ease-out: cubic-bezier(0.4, 0, 1, 1);
+    --luvn-offset: 16px;
+    --luvn-gap: 12px;
+    --luvn-width: 360px;
+}
+
+/* ------------------------------------------------------------------------
+   2. CONTAINER - one fixed stack per screen corner
+   ------------------------------------------------------------------------ */
+.luvn-container {
+    position: fixed;
+    z-index: var(--luvn-z);
+    display: flex;
+    flex-direction: column;
+    gap: var(--luvn-gap);
+    padding: var(--luvn-offset);
+    max-width: 100vw;
+    box-sizing: border-box;
+    pointer-events: none;
+}
+
+.luvn-container[data-pos='top-right']     { top: 0; right: 0; align-items: flex-end; flex-direction: column-reverse; }
+.luvn-container[data-pos='top-left']      { top: 0; left: 0; align-items: flex-start; flex-direction: column-reverse; }
+.luvn-container[data-pos='top-center']    { top: 0; left: 50%; transform: translateX(-50%); align-items: center; flex-direction: column-reverse; }
+.luvn-container[data-pos='bottom-right']  { bottom: 0; right: 0; align-items: flex-end; flex-direction: column; }
+.luvn-container[data-pos='bottom-left']   { bottom: 0; left: 0; align-items: flex-start; flex-direction: column; }
+.luvn-container[data-pos='bottom-center'] { bottom: 0; left: 50%; transform: translateX(-50%); align-items: center; flex-direction: column; }
+
+/* ------------------------------------------------------------------------
+   3. TOAST - base + enter / leave animation
+   ------------------------------------------------------------------------ */
+.luvn-toast {
+    pointer-events: auto;
+    position: relative;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 12px;
+    width: var(--luvn-width);
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 14px;
+    border-radius: var(--luvn-radius);
+    border: 1px solid var(--luvn-border);
+    background: var(--luvn-bg);
+    color: var(--luvn-fg);
+    box-shadow: 0 0 10px rgba(15, 23, 42, 0.06), 0 6px 14px -8px rgba(15, 23, 42, 0.18);
+    font-family: var(--luvn-font);
+    font-size: 13px;
+    line-height: 1.45;
+    overflow: hidden;
+    isolation: isolate;
+    opacity: 0;
+    transform: translate(var(--luvn-from-x, 0), var(--luvn-from-y, 0)) scale(var(--luvn-from-s, 1));
+    transition: opacity 300ms var(--luvn-ease-out),
+                transform 300ms var(--luvn-ease-out),
+                box-shadow 300ms var(--luvn-ease-out);
+    will-change: opacity, transform;
+}
+
+/* Soft top-left highlight for depth */
+.luvn-toast::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: radial-gradient(120% 120% at 0% 0%, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 55%);
+    pointer-events: none;
+}
+
+.luvn-toast.luvn-dark::before {
+    background: radial-gradient(120% 120% at 0% 0%, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 55%);
+}
+
+/* One-time light sweep on entry */
+.luvn-toast::after {
+    content: '';
+    position: absolute;
+    top: -20%;
+    left: 0;
+    width: 45%;
+    height: 140%;
+    background: linear-gradient(105deg, transparent 20%, rgba(255, 255, 255, 0.45) 50%, transparent 80%);
+    transform: translateX(-160%) skewX(-18deg);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.luvn-toast.luvn-dark::after {
+    background: linear-gradient(105deg, transparent 20%, rgba(255, 255, 255, 0.18) 50%, transparent 80%);
+}
+
+.luvn-toast.luvn-in::after {
+    animation: luvn-shine 900ms ease-out 120ms 1 both;
+}
+
+@keyframes luvn-shine {
+    0%   { transform: translateX(-160%) skewX(-18deg); opacity: 0; }
+    15%  { opacity: 1; }
+    100% { transform: translateX(320%) skewX(-18deg); opacity: 0; }
+}
+
+.luvn-toast.luvn-in {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+    box-shadow: var(--luvn-shadow);
+    transition: opacity var(--luvn-duration) var(--luvn-ease-spring),
+                transform var(--luvn-duration) var(--luvn-ease-spring),
+                box-shadow var(--luvn-duration) var(--luvn-ease-spring);
+}
+
+.luvn-toast.luvn-out {
+    opacity: 0;
+    transform: translate(var(--luvn-from-x, 0), var(--luvn-from-y, 0)) scale(0.96);
+    transition: opacity 300ms var(--luvn-ease-out),
+                transform 300ms var(--luvn-ease-out);
+}
+
+.luvn-toast:hover { box-shadow: var(--luvn-shadow-hover); }
+.luvn-toast.luvn-in:hover { transform: translateY(-2px); }
+
+/* Bounce entrance */
+.luvn-toast[data-anim='bounce'].luvn-in { animation: luvn-bounce-in 650ms var(--luvn-ease-spring) both; }
+
+@keyframes luvn-bounce-in {
+    0%   { opacity: 0; transform: translateY(16px) scale(0.96); }
+    55%  { opacity: 1; transform: translateY(-4px) scale(1.01); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ------------------------------------------------------------------------
+   4. ICON
+   ------------------------------------------------------------------------ */
+.luvn-icon {
+    flex: 0 0 22px;
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    color: var(--luvn-icon-fg);
+}
+
+.luvn-icon svg { width: 20px; height: 20px; display: block; }
+
+.luvn-loading .luvn-icon svg { animation: luvn-spin 800ms linear infinite; }
+
+@keyframes luvn-spin { to { transform: rotate(360deg); } }
+
+/* Icon pops in with the toast */
+.luvn-toast.luvn-in .luvn-icon { animation: luvn-icon-pop 520ms var(--luvn-ease-spring) both; }
+
+@keyframes luvn-icon-pop {
+    0%   { transform: scale(0.4); opacity: 0; }
+    60%  { transform: scale(1.12); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* Error icon shakes */
+.luvn-toast.luvn-error.luvn-in .luvn-icon { animation: luvn-shake 520ms ease-in-out both; }
+
+@keyframes luvn-shake {
+    0%, 100% { transform: translateX(0); }
+    20%      { transform: translateX(-6px); }
+    40%      { transform: translateX(5px); }
+    60%      { transform: translateX(-3px); }
+    80%      { transform: translateX(2px); }
+}
+
+/* Warning icon keeps a soft pulse after it lands */
+.luvn-toast.luvn-warning.luvn-in .luvn-icon {
+    animation: luvn-icon-pop 520ms var(--luvn-ease-spring) both,
+               luvn-pulse 1.8s ease-in-out 700ms infinite;
+}
+
+@keyframes luvn-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.35); }
+    50%      { box-shadow: 0 0 0 6px rgba(217, 119, 6, 0); }
+}
+
+.luvn-toast.luvn-dark.luvn-warning.luvn-in .luvn-icon {
+    animation: luvn-icon-pop 520ms var(--luvn-ease-spring) both,
+               luvn-pulse-dark 1.8s ease-in-out 700ms infinite;
+}
+
+@keyframes luvn-pulse-dark {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.35); }
+    50%      { box-shadow: 0 0 0 6px rgba(251, 191, 36, 0); }
+}
+
+/* Success check draws itself in */
+.luvn-toast.luvn-success.luvn-in .luvn-icon svg path:last-child {
+    stroke-dasharray: 24;
+    stroke-dashoffset: 24;
+    animation: luvn-draw 520ms ease-out 180ms forwards;
+}
+
+@keyframes luvn-draw { to { stroke-dashoffset: 0; } }
+
+/* ------------------------------------------------------------------------
+   5. CONTENT
+   ------------------------------------------------------------------------ */
+.luvn-content { flex: 1 1 auto; min-width: 0; }
+
+.luvn-title { margin: 0; font-size: 13px; font-weight: 700; color: var(--luvn-fg); }
+
+.luvn-message { margin: 0; font-size: 12.5px; color: var(--luvn-muted); word-break: break-word; }
+
+.luvn-title + .luvn-message { margin-top: 2px; }
+
+.luvn-message a { color: inherit; text-decoration: underline; }
+
+/* ------------------------------------------------------------------------
+   6. CONTROLS - copy + dismiss icon buttons
+   ------------------------------------------------------------------------ */
+.luvn-controls {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex: 0 0 auto;
+    margin: 0 -4px 0 0;
+}
+
+.luvn-btn {
+    width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--luvn-muted);
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 120ms ease, color 120ms ease;
+}
+
+.luvn-btn:hover { background: rgba(0, 0, 0, 0.06); color: var(--luvn-fg); }
+.luvn-dark .luvn-btn:hover { background: rgba(255, 255, 255, 0.08); }
+
+.luvn-btn svg { width: 15px; height: 15px; display: block; }
+
+.luvn-btn.is-copied { color: var(--luvn-accent); }
+
+/* ------------------------------------------------------------------------
+   7. ACTIONS - optional inline buttons
+   ------------------------------------------------------------------------ */
+.luvn-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+
+.luvn-action {
+    height: 26px;
+    padding: 0 10px;
+    border-radius: 4px;
+    border: 1px solid var(--luvn-border);
+    background: transparent;
+    color: var(--luvn-fg);
+    font-family: inherit;
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 120ms ease, border-color 120ms ease;
+}
+
+.luvn-action:hover { background: rgba(0, 0, 0, 0.05); }
+.luvn-dark .luvn-action:hover { background: rgba(255, 255, 255, 0.08); }
+
+.luvn-action-primary { background: var(--luvn-accent); border-color: var(--luvn-accent); color: #ffffff; }
+.luvn-action-primary:hover { background: var(--luvn-accent); filter: brightness(1.06); }
+
+.luvn-action-danger { background: #dc2626; border-color: #dc2626; color: #ffffff; }
+.luvn-action-danger:hover { background: #b91c1c; border-color: #b91c1c; }
+
+/* ------------------------------------------------------------------------
+   8. PALETTES - light
+   ------------------------------------------------------------------------ */
+.luvn-toast {
+    --luvn-bg: #ffffff;
+    --luvn-border: #d6deea;
+    --luvn-fg: #111827;
+    --luvn-muted: #64748b;
+    --luvn-accent: #2563eb;
+    --luvn-icon-fg: #2563eb;
+}
+
+.luvn-success { --luvn-bg: #ecfdf5; --luvn-border: #a7f3d0; --luvn-fg: #065f46; --luvn-muted: #047857; --luvn-accent: #059669; --luvn-icon-fg: #059669; }
+.luvn-error   { --luvn-bg: #fef2f2; --luvn-border: #fecaca; --luvn-fg: #991b1b; --luvn-muted: #b91c1c; --luvn-accent: #dc2626; --luvn-icon-fg: #dc2626; }
+.luvn-warning { --luvn-bg: #fffbeb; --luvn-border: #fde68a; --luvn-fg: #92400e; --luvn-muted: #b45309; --luvn-accent: #d97706; --luvn-icon-fg: #d97706; }
+.luvn-info    { --luvn-bg: #eff6ff; --luvn-border: #bfdbfe; --luvn-fg: #1e40af; --luvn-muted: #1d4ed8; --luvn-accent: #2563eb; --luvn-icon-fg: #2563eb; }
+.luvn-neutral { --luvn-bg: #ffffff; --luvn-border: #d6deea; --luvn-fg: #111827; --luvn-muted: #64748b; --luvn-accent: #64748b; --luvn-icon-fg: #475569; }
+.luvn-loading { --luvn-bg: #ffffff; --luvn-border: #d6deea; --luvn-fg: #111827; --luvn-muted: #64748b; --luvn-accent: #2563eb; --luvn-icon-fg: #2563eb; }
+
+/* ------------------------------------------------------------------------
+   9. PALETTES - dark
+   ------------------------------------------------------------------------ */
+.luvn-dark {
+    --luvn-bg: #121c31;
+    --luvn-border: #273753;
+    --luvn-fg: #eaf2ff;
+    --luvn-muted: #8ba0c4;
+    --luvn-accent: #60a5fa;
+    --luvn-icon-fg: #93c5fd;
+    --luvn-shadow: 0 0 24px rgba(0, 0, 0, 0.35), 0 18px 40px -10px rgba(0, 0, 0, 0.55), 0 8px 18px -8px rgba(0, 0, 0, 0.4);
+    --luvn-shadow-hover: 0 0 32px rgba(0, 0, 0, 0.45), 0 24px 52px -12px rgba(0, 0, 0, 0.62), 0 12px 24px -10px rgba(0, 0, 0, 0.45);
+}
+
+.luvn-dark.luvn-success { --luvn-bg: #0f2a22; --luvn-border: #1f5c46; --luvn-fg: #6ee7b7; --luvn-muted: #34d399; --luvn-accent: #34d399; --luvn-icon-fg: #34d399; }
+.luvn-dark.luvn-error   { --luvn-bg: #2a1418; --luvn-border: #5c2323; --luvn-fg: #fca5a5; --luvn-muted: #f87171; --luvn-accent: #f87171; --luvn-icon-fg: #f87171; }
+.luvn-dark.luvn-warning { --luvn-bg: #2a2110; --luvn-border: #5c4415; --luvn-fg: #fcd34d; --luvn-muted: #fbbf24; --luvn-accent: #fbbf24; --luvn-icon-fg: #fbbf24; }
+.luvn-dark.luvn-info    { --luvn-bg: #101f38; --luvn-border: #244a7a; --luvn-fg: #93c5fd; --luvn-muted: #60a5fa; --luvn-accent: #60a5fa; --luvn-icon-fg: #60a5fa; }
+.luvn-dark.luvn-neutral { --luvn-bg: #121c31; --luvn-border: #273753; --luvn-fg: #eaf2ff; --luvn-muted: #8ba0c4; --luvn-accent: #94a3b8; --luvn-icon-fg: #94a3b8; }
+.luvn-dark.luvn-loading { --luvn-bg: #121c31; --luvn-border: #273753; --luvn-fg: #eaf2ff; --luvn-muted: #8ba0c4; --luvn-accent: #60a5fa; --luvn-icon-fg: #60a5fa; }
+
+/* ------------------------------------------------------------------------
+   10. VARIANTS - soft (default) | solid | gradient | outline | minimal
+   ------------------------------------------------------------------------ */
+
+/* Solid - status colour background, white text + icon */
+.luvn-toast.luvn-variant-solid.luvn-success { --luvn-bg: #059669; --luvn-border: #059669; --luvn-fg: #ffffff; --luvn-muted: rgba(255, 255, 255, 0.85); --luvn-accent: #ffffff; --luvn-icon-fg: #ffffff; }
+.luvn-toast.luvn-variant-solid.luvn-error   { --luvn-bg: #dc2626; --luvn-border: #dc2626; --luvn-fg: #ffffff; --luvn-muted: rgba(255, 255, 255, 0.85); --luvn-accent: #ffffff; --luvn-icon-fg: #ffffff; }
+.luvn-toast.luvn-variant-solid.luvn-warning { --luvn-bg: #d97706; --luvn-border: #d97706; --luvn-fg: #ffffff; --luvn-muted: rgba(255, 255, 255, 0.9); --luvn-accent: #ffffff; --luvn-icon-fg: #ffffff; }
+.luvn-toast.luvn-variant-solid.luvn-info    { --luvn-bg: #2563eb; --luvn-border: #2563eb; --luvn-fg: #ffffff; --luvn-muted: rgba(255, 255, 255, 0.85); --luvn-accent: #ffffff; --luvn-icon-fg: #ffffff; }
+.luvn-toast.luvn-variant-solid.luvn-neutral { --luvn-bg: #334155; --luvn-border: #334155; --luvn-fg: #ffffff; --luvn-muted: rgba(255, 255, 255, 0.8); --luvn-accent: #ffffff; --luvn-icon-fg: #ffffff; }
+.luvn-toast.luvn-variant-solid.luvn-loading { --luvn-bg: #2563eb; --luvn-border: #2563eb; --luvn-fg: #ffffff; --luvn-muted: rgba(255, 255, 255, 0.85); --luvn-accent: #ffffff; --luvn-icon-fg: #ffffff; }
+
+/* Gradient - status gradient background, white text + icon */
+.luvn-toast.luvn-variant-gradient.luvn-success { --luvn-bg: linear-gradient(135deg, #10b981 0%, #059669 100%); --luvn-border: #059669; --luvn-fg: #ffffff; --luvn-muted: rgba(255, 255, 255, 0.85); --luvn-accent: #ffffff; --luvn-icon-fg: #ffffff; }
+.luvn-toast.luvn-variant-gradient.luvn-error   { --luvn-bg: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); --luvn-border: #dc2626; --luvn-fg: #ffffff; --luvn-muted: rgba(255, 255, 255, 0.85); --luvn-accent: #ffffff; --luvn-icon-fg: #ffffff; }
+.luvn-toast.luvn-variant-gradient.luvn-warning { --luvn-bg: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); --luvn-border: #d97706; --luvn-fg: #ffffff; --luvn-muted: rgba(255, 255, 255, 0.9); --luvn-accent: #ffffff; --luvn-icon-fg: #ffffff; }
+.luvn-toast.luvn-variant-gradient.luvn-info    { --luvn-bg: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); --luvn-border: #2563eb; --luvn-fg: #ffffff; --luvn-muted: rgba(255, 255, 255, 0.85); --luvn-accent: #ffffff; --luvn-icon-fg: #ffffff; }
+.luvn-toast.luvn-variant-gradient.luvn-neutral { --luvn-bg: linear-gradient(135deg, #475569 0%, #334155 100%); --luvn-border: #334155; --luvn-fg: #ffffff; --luvn-muted: rgba(255, 255, 255, 0.8); --luvn-accent: #ffffff; --luvn-icon-fg: #ffffff; }
+.luvn-toast.luvn-variant-gradient.luvn-loading { --luvn-bg: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); --luvn-border: #2563eb; --luvn-fg: #ffffff; --luvn-muted: rgba(255, 255, 255, 0.85); --luvn-accent: #ffffff; --luvn-icon-fg: #ffffff; }
+
+/* Solid + gradient stay fully opaque - no white sheen or sweep */
+.luvn-toast.luvn-variant-solid::before,
+.luvn-toast.luvn-variant-gradient::before,
+.luvn-toast.luvn-variant-solid::after,
+.luvn-toast.luvn-variant-gradient::after { display: none; }
+
+/* White-on-colour controls for solid + gradient */
+.luvn-toast.luvn-variant-solid .luvn-btn:hover,
+.luvn-toast.luvn-variant-gradient .luvn-btn:hover { background: rgba(255, 255, 255, 0.18); color: #ffffff; }
+
+.luvn-toast.luvn-variant-solid .luvn-action,
+.luvn-toast.luvn-variant-gradient .luvn-action { border-color: rgba(255, 255, 255, 0.4); color: #ffffff; }
+
+.luvn-toast.luvn-variant-solid .luvn-action:hover,
+.luvn-toast.luvn-variant-gradient .luvn-action:hover { background: rgba(255, 255, 255, 0.15); }
+
+.luvn-toast.luvn-variant-solid .luvn-action-primary,
+.luvn-toast.luvn-variant-gradient .luvn-action-primary { background: rgba(255, 255, 255, 0.2); border-color: rgba(255, 255, 255, 0.5); color: #ffffff; }
+
+.luvn-toast.luvn-variant-solid .luvn-action-primary:hover,
+.luvn-toast.luvn-variant-gradient .luvn-action-primary:hover { background: rgba(255, 255, 255, 0.3); }
+
+/* Outline - surface background, coloured border + text */
+.luvn-toast.luvn-variant-outline { --luvn-bg: #ffffff; --luvn-border: var(--luvn-accent); }
+.luvn-toast.luvn-dark.luvn-variant-outline { --luvn-bg: #121c31; }
+
+/* Minimal - neutral surface, only the icon carries the status colour */
+.luvn-toast.luvn-variant-minimal.luvn-success { --luvn-bg: #ffffff; --luvn-border: #d6deea; --luvn-fg: #111827; --luvn-muted: #64748b; --luvn-accent: #059669; --luvn-icon-fg: #059669; }
+.luvn-toast.luvn-variant-minimal.luvn-error   { --luvn-bg: #ffffff; --luvn-border: #d6deea; --luvn-fg: #111827; --luvn-muted: #64748b; --luvn-accent: #dc2626; --luvn-icon-fg: #dc2626; }
+.luvn-toast.luvn-variant-minimal.luvn-warning { --luvn-bg: #ffffff; --luvn-border: #d6deea; --luvn-fg: #111827; --luvn-muted: #64748b; --luvn-accent: #d97706; --luvn-icon-fg: #d97706; }
+.luvn-toast.luvn-variant-minimal.luvn-info    { --luvn-bg: #ffffff; --luvn-border: #d6deea; --luvn-fg: #111827; --luvn-muted: #64748b; --luvn-accent: #2563eb; --luvn-icon-fg: #2563eb; }
+.luvn-toast.luvn-variant-minimal.luvn-neutral { --luvn-bg: #ffffff; --luvn-border: #d6deea; --luvn-fg: #111827; --luvn-muted: #64748b; --luvn-accent: #64748b; --luvn-icon-fg: #475569; }
+.luvn-toast.luvn-variant-minimal.luvn-loading { --luvn-bg: #ffffff; --luvn-border: #d6deea; --luvn-fg: #111827; --luvn-muted: #64748b; --luvn-accent: #2563eb; --luvn-icon-fg: #2563eb; }
+
+.luvn-toast.luvn-dark.luvn-variant-minimal.luvn-success { --luvn-bg: #121c31; --luvn-border: #273753; --luvn-fg: #eaf2ff; --luvn-muted: #8ba0c4; --luvn-accent: #34d399; --luvn-icon-fg: #34d399; }
+.luvn-toast.luvn-dark.luvn-variant-minimal.luvn-error   { --luvn-bg: #121c31; --luvn-border: #273753; --luvn-fg: #eaf2ff; --luvn-muted: #8ba0c4; --luvn-accent: #f87171; --luvn-icon-fg: #f87171; }
+.luvn-toast.luvn-dark.luvn-variant-minimal.luvn-warning { --luvn-bg: #121c31; --luvn-border: #273753; --luvn-fg: #eaf2ff; --luvn-muted: #8ba0c4; --luvn-accent: #fbbf24; --luvn-icon-fg: #fbbf24; }
+.luvn-toast.luvn-dark.luvn-variant-minimal.luvn-info    { --luvn-bg: #121c31; --luvn-border: #273753; --luvn-fg: #eaf2ff; --luvn-muted: #8ba0c4; --luvn-accent: #60a5fa; --luvn-icon-fg: #60a5fa; }
+.luvn-toast.luvn-dark.luvn-variant-minimal.luvn-neutral { --luvn-bg: #121c31; --luvn-border: #273753; --luvn-fg: #eaf2ff; --luvn-muted: #8ba0c4; --luvn-accent: #94a3b8; --luvn-icon-fg: #94a3b8; }
+.luvn-toast.luvn-dark.luvn-variant-minimal.luvn-loading { --luvn-bg: #121c31; --luvn-border: #273753; --luvn-fg: #eaf2ff; --luvn-muted: #8ba0c4; --luvn-accent: #60a5fa; --luvn-icon-fg: #60a5fa; }
+
+/* ------------------------------------------------------------------------
+   11. RESPONSIVE
+   ------------------------------------------------------------------------ */
+@media (max-width: 480px) {
+    .luvn-container { padding: 10px; }
+
+    .luvn-container[data-pos='top-center'],
+    .luvn-container[data-pos='bottom-center'] {
+        left: 0;
+        right: 0;
+        transform: none;
+        align-items: stretch;
+    }
+
+    .luvn-toast { width: 100%; }
+}
